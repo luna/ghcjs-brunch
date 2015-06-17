@@ -1,0 +1,17 @@
+{
+  "name": "ghcjs-brunch",
+  "version": "1.0.0",
+  "description": "GHCJS integration with brunch.",
+  "author": "Kamil Figiela (http://kfigiela.github.io/)",
+  "homepage": "https://github.com/kfigiela/ghcjs-brunch",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:kfigiela/ghcjs-brunch.git"
+  },
+  "license": "MIT",
+  "scripts": {},
+  "dependencies": {
+    "glob": "^5.0.10"
+  },
+  "devDependencies": {}
+}
