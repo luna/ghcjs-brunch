@@ -7,7 +7,6 @@ function GhcCompiler(config) {
   if (config == null) config = {};
   var options = config.plugins && config.plugins.ghcjs;
   this.options = options
-  console.log(options)
 }
 
 GhcCompiler.prototype.brunchPlugin = true;
