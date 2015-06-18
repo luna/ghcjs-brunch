@@ -22,8 +22,11 @@ GhcCompiler.prototype.compile = function(data, path, callback) {
     cabal.on('close', function (code) {
       console.log('Cabal exited with code ' + code);
       if(code == 0) {
-        fs.readFile('dist/build/'+_this.options.projectName+'/'+_this.options.projectName+'.jsexe/all.js', 'utf-8', function(err, data) {
-          callback(null, {data: data});
+        fs.readFile('dist/build/'+_this.options.projectName+'/'+_this.options.projectName+'.jsexe/all.js', 'utf-8', function(err, compiled) {
+          
+          var allsource = "(function(){\n " + data + "; \n\n" + compiled + "\n})();"
+          
+          callback(null, {data: allsource});
         });
       } else {
         callback("Cabal failed", null);
