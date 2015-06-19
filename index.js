@@ -58,11 +58,20 @@ GhcCompiler.prototype.sourceFiles = function(callback) {
     callback(err, files)
   });
 }
+
+function mtimeOrEmpty(name) {
+  try {
+    return fs.statSync(name).mtime
+  } catch(err) {
+    return ""
+  }   
+}
+
 GhcCompiler.prototype.recompileIfChanged = function(callback) {
   var _this = this;
   this.sourceFiles(function (err, files) { // TODO: add error handling
-    var max_mtime = Math.max.apply(null, files.map(function(name){ return (fs.statSync(name) || {mtime: ""}).mtime}).sort())
-    var last_compiled = (fs.statSync(_this.outfile) || {mtime: ""}).mtime
+    var max_mtime = Math.max.apply(null, files.map(mtimeOrEmpty).sort())
+    var last_compiled = mtimeOrEmpty(_this.outfile);
     callback(process.env.RECOMPILE || max_mtime > last_compiled)
   });
 }
