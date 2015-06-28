@@ -7,7 +7,6 @@ function GhcCompiler(config) {
   if (config === null) config = {};
   var options = config.plugins && config.plugins.ghcjs;
   this.options = options;
-  this.outfile = 'dist/**/build/'+this.options.projectName+'/'+this.options.projectName+'.jsexe/all.js';
   this.globPattern = "app/**/*.hs";
 }
 
@@ -32,15 +31,11 @@ GhcCompiler.prototype.compile = function(data, path, callback) {
 };
 
 GhcCompiler.prototype.assembly = function(data, callback) {
-  var outfiles = glob.sync(this.outfile);
-  if(outfiles.length != 1) {
-    callback(["More than one all.js file!"], null); 
-  } else {  
-    fs.readFile(outfiles[0], 'utf-8', function(err, compiled) {
-      var allsource = "/* from: " + outfiles[0] + " */\n\n(function(){\n " + data + "; \n\n" + compiled + "\n})();";
-      callback(null, {data: allsource});
-    });  
-  }
+  var outfile = this.getFile();
+  fs.readFile(outfile, 'utf-8', function(err, compiled) {
+    var allsource = "/* from: " + outfile + " */\n\nwindow.ghcjs = (function(){\n " + data + "; \n\n" + compiled + "\n});";
+    callback(null, {data: allsource});
+  });  
 };
 
 GhcCompiler.prototype.rebuild = function(data, callback) {
@@ -64,6 +59,17 @@ GhcCompiler.prototype.sourceFiles = function(callback) {
   });
 };
 
+GhcCompiler.prototype.getFile = function() {
+  var outfiles = glob.sync('dist/dist-sandbox-*/build/'+this.options.projectName+'/'+this.options.projectName+'.jsexe/all.js');
+  outfiles.push('dist/build/'+this.options.projectName+'/'+this.options.projectName+'.jsexe/all.js');
+
+  if (outfiles.length != 1) {
+    console.log("More than one all.js file: " + outfiles.join() + ", using first.");
+  }
+  return outfiles[0];
+};
+
+
 function mtimeOrEmpty(name) {
   try {
     return fs.statSync(name).mtime;
@@ -76,8 +82,8 @@ GhcCompiler.prototype.recompileIfChanged = function(callback) {
   var _this = this;
   this.sourceFiles(function (err, files) { // TODO: add error handling
     var max_mtime = Math.max.apply(null, files.map(mtimeOrEmpty).sort());
-    var outfiles = glob.sync(_this.outfile);
-    var last_compiled = mtimeOrEmpty(outfiles[0]);
+    var outfile = glob.sync(_this.getFile());
+    var last_compiled = mtimeOrEmpty(outfile);
     callback(process.env.RECOMPILE || max_mtime > last_compiled);
   });
 };
