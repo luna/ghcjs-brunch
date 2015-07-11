@@ -6,6 +6,11 @@ var exec = require('shelljs').exec;
 function GhcCompiler(config) {
   if (config === null) config = {};
   var options = config.plugins && config.plugins.ghcjs;
+
+  if(options.buildCommand === undefined) options.buildCommand = 'cabal install';
+  if(options.clearScreen  === undefined) options.clearScreen  = false;
+  if(options.placeholder  === undefined) options.placeholder  = "env.ghcjs";
+
   this.options = options;
   this.globPattern = "app/**/*.hs";
 }
@@ -17,12 +22,14 @@ GhcCompiler.prototype.extension = 'ghcjs';
 GhcCompiler.prototype.compile = function(data, path, callback) {
   var _this = this;
   if(path == this.options.placeholder) {
+    if(this.options.clearScreen) console.log("\x1b[2J\x1b[1;1H");
+
     this.recompileIfChanged(function(shouldRebuild) {
       if(shouldRebuild) {
         _this.rebuild(data, callback);
       } else {
         _this.assembly(data, callback);
-        console.log("Cabal sources not changed, skipping");
+        console.log("Cabal sources not changed, skipping.");
       }
     });
   } else {
@@ -33,15 +40,15 @@ GhcCompiler.prototype.compile = function(data, path, callback) {
 GhcCompiler.prototype.assembly = function(data, callback) {
   var outfile = this.getFile();
   fs.readFile(outfile, 'utf-8', function(err, compiled) {
-    var allsource = "/* from: " + outfile + " */\n\nwindow.ghcjs = (function(){\n " + data + "; \n\n" + compiled + "\n});";
+    var allsource = "/* from: " + outfile + " */\n\nmodule.exports = (function(){\n " + data + "; \n\n" + compiled + "\n});";
     callback(null, {data: allsource});
-  });  
+  });
 };
 
 GhcCompiler.prototype.rebuild = function(data, callback) {
   var _this = this;
-  console.log("Running cabal install...");
-  exec('cabal install --ghcjs', function(code, output){
+  console.log("Running " + this.options.buildCommand + "...");
+  exec(this.options.buildCommand, function(code, output){
     if(code === 0) {
       console.log("Cabal finished successfully");
       _this.assembly(data, callback);
@@ -75,7 +82,7 @@ function mtimeOrEmpty(name) {
     return fs.statSync(name).mtime;
   } catch(err) {
     return "";
-  }   
+  }
 }
 
 GhcCompiler.prototype.recompileIfChanged = function(callback) {
