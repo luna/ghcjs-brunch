@@ -1,7 +1,8 @@
-var glob = require('glob');
-var spawn = require('child_process').spawn;
-var fs = require('fs');
-var exec = require('shelljs').exec;
+var glob = require('glob')
+  , spawn = require('child_process').spawn
+  , fs = require('fs')
+  , exec = require('shelljs').exec
+  , logger = require('loggy');
 
 function GhcCompiler(config) {
   if (config === null) config = {};
@@ -29,7 +30,7 @@ GhcCompiler.prototype.compile = function(data, path, callback) {
         _this.rebuild(data, callback);
       } else {
         _this.assembly(data, callback);
-        console.log("Cabal sources not changed, skipping.");
+        logger.info("Cabal sources not changed, skipping.");
       }
     });
   } else {
@@ -47,10 +48,10 @@ GhcCompiler.prototype.assembly = function(data, callback) {
 
 GhcCompiler.prototype.rebuild = function(data, callback) {
   var _this = this;
-  console.log("Running " + this.options.buildCommand + "...");
+  logger.info("Running " + this.options.buildCommand + "...");
   exec(this.options.buildCommand, function(code, output){
     if(code === 0) {
-      console.log("Cabal finished successfully");
+      logger.info("Cabal finished successfully");
       _this.assembly(data, callback);
     } else {
       callback("Cabal failed (code: " + code + ")", null);
@@ -71,7 +72,7 @@ GhcCompiler.prototype.getFile = function() {
   outfiles.push('dist/build/'+this.options.projectName+'/'+this.options.projectName+'.jsexe/all.js');
 
   if (outfiles.length != 1) {
-    console.log("More than one all.js file: " + outfiles.join() + ", using first.");
+    logger.info("More than one all.js file: " + outfiles.join() + ", using first.");
   }
   return outfiles[0];
 };
