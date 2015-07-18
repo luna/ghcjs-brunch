@@ -55,13 +55,13 @@ GhcCompiler.prototype.startInteractive = function() {
 
   this.ghci.stdout.pipe(StreamSplitter("\n")).on('token', function (data) {
     var d = data.toString('utf8');
-     // _this.io.emit('stdout', ansi_up.ansi_to_html(d) + "\n");
+     _this.io.emit('stdout', ansi_up.ansi_to_html(d) + "\n");
      logger.info("GHCI: " + d);
   });
 
   this.ghci.stderr.pipe(StreamSplitter("\n")).on('token', function (data) {
     var d = data.toString('utf8');
-      // _this.io.emit('stdout', ansi_up.ansi_to_html(d) + "\n");
+      _this.io.emit('stdout', ansi_up.ansi_to_html(d) + "\n");
      logger.warn("GHCI: " + d);
   });
 
