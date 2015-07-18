@@ -13,7 +13,6 @@ Or, do manual install:
 `"ghcjs-brunch": "git+ssh://git@github.com:kfigiela/ghcjs-brunch.git"`.
 
 ## Configuration
-You can set the `--bare` option in your brunch config (such as `brunch-config.coffee`):
 
 ```coffee
 exports.config =
@@ -23,17 +22,35 @@ exports.config =
         ...
         'javascripts/ghcjs.js': /^app\/.*\.ghcjs$/
   ...
+  conventions:
+    assets: /(assets|vendor\/assets)/
+    ignored: [
+          /[\\/]_/
+          /vendor[\\/](node|j?ruby-.*|bundle)[\\/]/
+          /ghcjs-live\.js$/
+        ]
   plugins:
     ghcjs:
-      placeholder: "app/placeholder.ghcjs"
-      cabalName: "gui"
+      placeholder:  'app/env.ghcjs' # name of placeholder file
+      projectName:  'gui'           # cabal project name
+      buildCommand: 'cabal install' # you may want to provide some additional flags, etc.
+      clearScreen:  false           # should clear terminal when running buildCommand
+      interactive:  false           # enable interactive mode
+      ghciCommand:  "./interactive" # command that starts ghcjs --interactive --package-db ... -package ... Main.hs in the right CWD
+  overrides:
+    interactive:
+      conventions: ignored: [
+          /[\\/]_/
+          /vendor[\\/](node|j?ruby-.*|bundle)[\\/]/
+        ]
+      plugins: ghcjs: interactive: true
 ```
 
 ## License
 
 The MIT License (MIT)
 
-Copyright (c) 2012-2013 Paul Miller (http://paulmillr.com)
+Copyright (c) 2015 Kamil Figiela (http://kfigiela.github.io)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
