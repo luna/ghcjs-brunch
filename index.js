@@ -51,19 +51,18 @@ GhcCompiler.prototype.startInteractive = function() {
 
   this.ghci = spawn(this.options.ghciCommand);
 
-  this.ghci.stdin.write(':set prompt ""');
+  this.ghci.stdin.write(":set prompt \"\"\n");
+  this.ghci.stdin.write(":set +t");
 
-  this.ghci.stdout.pipe(StreamSplitter("\n")).on('token', function (data) {
+  var handleOut = function (data) {
     var d = data.toString('utf8');
-     _this.io.emit('stdout', ansi_up.ansi_to_html(d) + "\n");
-     logger.info("GHCI: " + d);
-  });
+    if (d.indexOf("Linking Template Haskell") !== -1) return; // too many of them!
+    _this.io.emit('stdout', ansi_up.ansi_to_html(d) + "\n");
+    logger.info("GHCI: " + d);
+  };
 
-  this.ghci.stderr.pipe(StreamSplitter("\n")).on('token', function (data) {
-    var d = data.toString('utf8');
-      _this.io.emit('stdout', ansi_up.ansi_to_html(d) + "\n");
-     logger.warn("GHCI: " + d);
-  });
+  this.ghci.stdout.pipe(StreamSplitter("\n")).on('token', handleOut);
+  this.ghci.stderr.pipe(StreamSplitter("\n")).on('token', handleOut);
 
   process.on('exit', function() {
     _this.teardown();
@@ -77,6 +76,7 @@ GhcCompiler.prototype.requestReload = function() {
 
 GhcCompiler.prototype.teardown = function() {
   if(this.ghci) {
+    this.io.close();
     this.ghci.stdin.write("\n\n\n:quit\n");
 
     logger.info("Closing GHCI");
