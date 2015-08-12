@@ -12,7 +12,7 @@ function GhcCompiler(config) {
   if (config === null) config = {};
   var options = config.plugins && config.plugins.ghcjs;
 
-  if(options.buildCommand === undefined) options.buildCommand = 'cabal install';
+  if(options.buildCommand === undefined) options.buildCommand = 'stack build';
   if(options.clearScreen  === undefined) options.clearScreen  = false;
   if(options.placeholder  === undefined) options.placeholder  = "env.ghcjs";
   if(options.interactive  === undefined) options.interactive  = false;
@@ -36,10 +36,12 @@ GhcCompiler.prototype.setupServer = function() {
 
   this.io.on('connection', function(socket){
     logger.info("ghcjs-brunch: browser-connected");
+
     socket.on('reload', function(msg) {
       _this.requestReload();
       socket.emit("stdout", "Please wait...\n\n");
     });
+
     socket.on('disconnect', function(){
       logger.info("ghcjs-brunch: browser-disconnected");
     });
@@ -92,15 +94,7 @@ GhcCompiler.prototype.compile = function(data, path, callback) {
       logger.info("GHCJS-Brunch: Injecting loader code, the code will load dynamically from GHCI.")
       _this.assembly(data, callback);
     } else {
-
-      this.recompileIfChanged(function(shouldRebuild) {
-        if(shouldRebuild) {
-          _this.rebuild(data, callback);
-        } else {
-          _this.assembly(data, callback);
-          logger.info("GHCJS-Brunch: Cabal sources not changed, skipping.");
-        }
-      });
+      _this.rebuild(data, callback);
     }
   } else {
     callback(null, "");
@@ -120,10 +114,10 @@ GhcCompiler.prototype.rebuild = function(data, callback) {
   logger.info("Running " + this.options.buildCommand + "...");
   exec(this.options.buildCommand, function(code, output){
     if(code === 0) {
-      logger.info("GHCJS-Brunch: Cabal finished successfully");
+      logger.info("GHCJS-Brunch: stack finished successfully");
       _this.assembly(data, callback);
     } else {
-      callback("Cabal failed (code: " + code + ")", null);
+      callback("stack failed (code: " + code + ")", null);
     }
   });
 };
@@ -131,7 +125,10 @@ GhcCompiler.prototype.rebuild = function(data, callback) {
 GhcCompiler.prototype.sourceFiles = function(callback) {
   var _this = this;
   glob(this.globPattern, {}, function (err, files) {
-    if(files) files.push(_this.options.projectName + ".cabal");
+    if(files){
+      files.push(_this.options.projectName + ".cabal");
+      files.push("stack.yaml");
+    }
     callback(err, files);
   });
 };
@@ -141,32 +138,12 @@ GhcCompiler.prototype.getFile = function() {
     return __dirname + "/loader.js";
   }
 
-  var outfiles = glob.sync('dist/dist-sandbox-*/build/'+this.options.projectName+'/'+this.options.projectName+'.jsexe/all.js');
-  outfiles.push('dist/build/'+this.options.projectName+'/'+this.options.projectName+'.jsexe/all.js');
+  var outfiles = glob.sync('.stack-work/install/x86_64-*/*/*-ghcjs/bin/'+this.options.projectName+'.jsexe/all.js');
 
   if (outfiles.length != 1) {
     logger.info("GHCJS-Brunch: More than one all.js file: " + outfiles.join() + ", using first.");
   }
   return outfiles[0];
-};
-
-
-function mtimeOrEmpty(name) {
-  try {
-    return fs.statSync(name).mtime;
-  } catch(err) {
-    return "";
-  }
-}
-
-GhcCompiler.prototype.recompileIfChanged = function(callback) {
-  var _this = this;
-  this.sourceFiles(function (err, files) { // TODO: add error handling
-    var max_mtime = Math.max.apply(null, files.map(mtimeOrEmpty).sort());
-    var outfile = glob.sync(_this.getFile());
-    var last_compiled = mtimeOrEmpty(outfile);
-    callback(process.env.RECOMPILE || max_mtime > last_compiled);
-  });
 };
 
 GhcCompiler.prototype.getDependencies = function(data, path, callback) {

@@ -33,7 +33,7 @@ exports.config =
     ghcjs:
       placeholder:  'app/env.ghcjs' # name of placeholder file
       projectName:  'gui'           # cabal project name
-      buildCommand: 'cabal install' # you may want to provide some additional flags, etc.
+      buildCommand: 'stack build'   # you may want to provide some additional flags, etc.
       clearScreen:  false           # should clear terminal when running buildCommand
       interactive:  false           # enable interactive mode
       ghciCommand:  "./interactive" # command that starts ghcjs --interactive --package-db ... -package ... Main.hs in the right CWD
