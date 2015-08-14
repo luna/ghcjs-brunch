@@ -18,6 +18,8 @@ function GhcCompiler(config) {
   if(options.interactive  === undefined) options.interactive  = false;
   if(options.ghciCommand  === undefined) options.ghciCommand  = "/usr/bin/false";
 
+  this.outfileGlob = '.stack-work/install/x86_64-*/*/*-ghcjs/bin/' + options.projectName + '.jsexe/all.js';
+
   this.options = options;
   this.globPattern = "app/**/*.hs";
   if(this.options.interactive) {
@@ -138,7 +140,7 @@ GhcCompiler.prototype.getFile = function() {
     return __dirname + "/loader.js";
   }
 
-  var outfiles = glob.sync('.stack-work/install/x86_64-*/*/*-ghcjs/bin/'+this.options.projectName+'.jsexe/all.js');
+  var outfiles = glob.sync(this.outfileGlob);
 
   if (outfiles.length != 1) {
     logger.info("GHCJS-Brunch: More than one all.js file: " + outfiles.join() + ", using first.");
