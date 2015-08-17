@@ -18,7 +18,7 @@ function GhcCompiler(config) {
   if(options.interactive  === undefined) options.interactive  = false;
   if(options.ghciCommand  === undefined) options.ghciCommand  = "/usr/bin/false";
 
-  this.outfileGlob = '.stack-work/install/x86_64-*/*/*-ghcjs/bin/' + options.projectName + '.jsexe/all.js';
+  this.outfileGlob = '.stack-work/install/x86_64-*/ghcjs-*/ghcjs-*/bin/' + options.projectName + '.jsexe/all.js';
 
   this.options = options;
   this.globPattern = "app/**/*.hs";
@@ -90,6 +90,7 @@ GhcCompiler.prototype.teardown = function() {
 
 GhcCompiler.prototype.compile = function(data, path, callback) {
   var _this = this;
+  console.log(arguments)
   if(path == this.options.placeholder) {
     if(this.options.clearScreen) console.log("\x1b[2J\x1b[1;1H");
     if(this.options.interactive)  {
