@@ -61,8 +61,10 @@ GhcCompiler.prototype.startInteractive = function() {
   var handleOut = function (data) {
     var d = data.toString('utf8');
     if (d.indexOf("Linking Template Haskell") !== -1) return; // too many of them!
+    d = d.replace(/modules loaded:.*/, "modules loaded.");
     _this.io.emit('stdout', ansi_up.ansi_to_html(d) + "\n");
-    logger.info("GHCI: " + d);
+    console.info(d);
+    // logger.info("GHCI: " + d);
   };
 
   this.ghci.stdout.pipe(StreamSplitter("\n")).on('token', handleOut);
