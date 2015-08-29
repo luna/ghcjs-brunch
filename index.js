@@ -90,10 +90,10 @@ GhcCompiler.prototype.teardown = function() {
 
 GhcCompiler.prototype.compile = function(data, path, callback) {
   var _this = this;
-  console.log(arguments)
   if(path == this.options.placeholder) {
     if(this.options.clearScreen) console.log("\x1b[2J\x1b[1;1H");
     if(this.options.interactive)  {
+      this.ghci.stdin.write("\n\n:reload\n\n");
       logger.info("GHCJS-Brunch: Injecting loader code, the code will load dynamically from GHCI.")
       _this.assembly(data, callback);
     } else {
