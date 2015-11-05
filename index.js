@@ -6,6 +6,8 @@ var glob           = require('glob')
   , spawn          = require('child_process').spawn
   , StreamSplitter = require('stream-splitter')
   , ansi_up        = require('ansi_up')
+  , http           = require('http')
+  , url            = require('url')
   , kill           = require('tree-kill');
 
 function GhcCompiler(config) {
@@ -17,14 +19,22 @@ function GhcCompiler(config) {
   if(options.placeholder  === undefined) options.placeholder  = "env.ghcjs";
   if(options.interactive  === undefined) options.interactive  = false;
   if(options.ghciCommand  === undefined) options.ghciCommand  = "/usr/bin/false";
+  if(options.autoReload   === undefined) options.autoReload   = true;
 
   this.outfileGlob = '.stack-work/install/x86_64-*/*/ghcjs-*/bin/' + options.projectName + '.jsexe/all.js';
 
   this.options = options;
   this.globPattern = "app/**/*.hs";
+
+  var _this = this;
+
   if(this.options.interactive) {
     this.setupServer();
     this.startInteractive();
+
+    process.on('exit', function() {
+      _this.teardown();
+    });
   }
 }
 
@@ -34,19 +44,26 @@ GhcCompiler.prototype.extension = 'ghcjs';
 
 GhcCompiler.prototype.setupServer = function() {
   var _this = this;
-  this.io = require('socket.io').listen(9886);
+  this.server = http.createServer().listen(9886);
 
-  this.io.on('connection', function(socket){
-    logger.info("ghcjs-brunch: browser-connected");
+  this.server.on('request', function(req, resp) {
+    var u = url.parse(req.url);
+    if (u.pathname === '/reload') {
+      logger.info("Requesting code reload");
+      _this.ghci.stdin.write("\n\n:reload\n");
+      resp.write('OK');
+    } else if (u.pathname === '/link') {
+      logger.info("Requesting code link");
+      _this.ghci.stdin.write("\n\n:reload\n:main\n");
+      resp.write('OK');
+    } else if (u.pathname === '/restart') {
+      logger.info("Restarting GHCJS");
+      _this.teardown();
+      _this.startInteractive();
+      resp.write('OK');
+    }
+    resp.end();
 
-    socket.on('reload', function(msg) {
-      _this.requestReload();
-      socket.emit("stdout", "Please wait...\n\n");
-    });
-
-    socket.on('disconnect', function(){
-      logger.info("ghcjs-brunch: browser-disconnected");
-    });
   });
 }
 
@@ -56,33 +73,21 @@ GhcCompiler.prototype.startInteractive = function() {
   this.ghci = spawn(this.options.ghciCommand);
 
   this.ghci.stdin.write(":set prompt \"\"\n");
-  this.ghci.stdin.write(":set +t");
+  this.ghci.stdin.write(":set +t\n\n");
 
   var handleOut = function (data) {
     var d = data.toString('utf8');
     if (d.indexOf("Linking Template Haskell") !== -1) return; // too many of them!
     d = d.replace(/modules loaded:.*/, "modules loaded.");
-    _this.io.emit('stdout', ansi_up.ansi_to_html(d) + "\n");
     console.info(d);
-    // logger.info("GHCI: " + d);
   };
 
   this.ghci.stdout.pipe(StreamSplitter("\n")).on('token', handleOut);
   this.ghci.stderr.pipe(StreamSplitter("\n")).on('token', handleOut);
-
-  process.on('exit', function() {
-    _this.teardown();
-  });
-}
-
-GhcCompiler.prototype.requestReload = function() {
-  logger.info("Requesting code reload");
-  this.ghci.stdin.write("\n\n:reload\n:main\n\n");
 }
 
 GhcCompiler.prototype.teardown = function() {
   if(this.ghci) {
-    this.io.close();
     this.ghci.stdin.write("\n\n\n:quit\n");
 
     logger.info("Closing GHCI");
@@ -95,8 +100,9 @@ GhcCompiler.prototype.compile = function(data, path, callback) {
   if(path == this.options.placeholder) {
     if(this.options.clearScreen) console.log("\x1b[2J\x1b[1;1H");
     if(this.options.interactive)  {
-      this.ghci.stdin.write("\n\n:reload\n\n");
-      logger.info("GHCJS-Brunch: Injecting loader code, the code will load dynamically from GHCI.")
+      if(this.options.autoReload) {
+        this.ghci.stdin.write("\n\n:reload\n");
+      }
       _this.assembly(data, callback);
     } else {
       _this.rebuild(data, callback);
