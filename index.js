@@ -118,7 +118,9 @@ GhcCompiler.prototype.compile = function(data, path, callback) {
 GhcCompiler.prototype.assembly = function(data, callback) {
   var outfile = this.getFile();
   fs.readFile(outfile, 'utf-8', function(err, compiled) {
-    var allsource = "/* from: " + outfile + " */\n\nmodule.exports = (function(){\n " + data + "; \n\n" + compiled + "\n});";
+    var s = data.split("GHCJS_CODE_BE_THERE");
+
+    var allsource = "/* from: " + outfile + " */\n\nmodule.exports = (function(){\n " + s[0] + ";\n\n" + compiled +";\n\n" + s[1] + "; \n\n});";
     callback(null, {data: allsource});
   });
 };
