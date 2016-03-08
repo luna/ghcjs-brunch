@@ -49,14 +49,17 @@ GhcCompiler.prototype.setupServer = function() {
   this.server.on('request', function(req, resp) {
     var u = url.parse(req.url);
     if (u.pathname === '/reload') {
+      if(_this.options.clearScreen) console.log("\x1b[2J\x1b[1;1H");
       logger.info("Requesting code reload");
       _this.ghci.stdin.write("\n\n:reload\n");
       resp.write('OK');
     } else if (u.pathname === '/link') {
+      if(_this.options.clearScreen) console.log("\x1b[2J\x1b[1;1H");
       logger.info("Requesting code link");
       _this.ghci.stdin.write("\n\n:reload\n:main\n");
       resp.write('OK');
     } else if (u.pathname === '/restart') {
+      if(_this.options.clearScreen) console.log("\x1b[2J\x1b[1;1H");
       logger.info("Restarting GHCJS");
       _this.teardown();
       _this.startInteractive();
