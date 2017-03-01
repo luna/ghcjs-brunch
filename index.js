@@ -154,7 +154,7 @@ GhcCompiler.prototype.getFile = function() {
     return __dirname + "/loader.js";
   }
 
-  var outfiles = glob.sync(this.outfileGlob);
+  var outfiles = glob.sync(this.outfileGlob).sort().reverse();
 
   if (outfiles.length != 1) {
     logger.info("GHCJS-Brunch: More than one all.js file: " + outfiles.join() + ", using first.");

@@ -1,6 +1,6 @@
 {
   "name": "ghcjs-brunch",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "GHCJS integration with brunch.",
   "author": "Kamil Figiela (http://kfigiela.github.io/)",
   "homepage": "https://github.com/kfigiela/ghcjs-brunch",
