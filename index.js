@@ -7,7 +7,7 @@ function GhcCompiler(config) {
   if (config === null) config = {};
   var options = config.plugins && config.plugins.ghcjs;
   this.options = options;
-  this.globPattern = "app/**/*.hs";
+  this.globPattern = "./**/*.hs";
 }
 
 GhcCompiler.prototype.brunchPlugin = true;
